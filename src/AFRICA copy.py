@@ -34,7 +34,7 @@ for feature in json_data["features"]:
 df = pd.DataFrame(data)
 exceptions = ["GRL", "ISL"]
 
-filtered_df = df[(df["pop_est"] >= 2000000) & (df["adm0_a3"] != "SLE") & (df["adm0_a3"] != "BDI") & (df["adm0_a3"] != "LSO")]
+filtered_df = df[(df["pop_est"] >= 2000000) & (df["adm0_a3"] != "SLE") & (df["adm0_a3"] != "BDI") & (df["adm0_a3"] != "LSO") & (df["adm0_a3"] != "GAM")]
 filtered_df = filtered_df[filtered_df["subregion"].str.contains("Africa")]
 
 
@@ -249,7 +249,6 @@ country_neighbors = get_country_neighbors()
 country_neighbors['MOZ']=country_neighbors.get('MOZ')+['MDG']
 country_neighbors['MDG']=country_neighbors.get('MDG')+['MOZ']
 
-print(country_neighbors.keys())
 
 country_code_to_name = {}
 country_code_to_name[None]=None
@@ -340,15 +339,15 @@ def withinCountryinSub(app, mouseX, mouseY):
 def get_random_half_countries(country_shapes):
     country_list = list(country_shapes.keys())
     random.shuffle(country_list) 
+
     half_count = len(country_list) // 2  
     return country_list[:half_count]
 
 
 class Player:
 
-    def __init__(self,startingCountries,color):
+    def __init__(self,startingCountries):
         self.active=False
-        self.color=color
         self.owned=startingCountries
         self.phases=['Reinforcement','Attack','Fortification']
         self.phaseIndex=0
@@ -365,15 +364,24 @@ class Player:
         
 
 class Game:
-    def __init__(self):
-        pass
+    def __init__(self,app):
+        self.players=[]
 
-    def start(self):
+    def start(self,app):
+        
         starting1 = set(get_random_half_countries(country_shapes))
-        starting2 = set(country_shapes) - starting1
-        player1 = Player(starting1, 'green')
-        player2 = Player(starting2, 'blue')
-        self.players = [player1, player2]
+
+        starting2 = set(country_shapes.keys()) - starting1
+
+        app.player1 = Player(starting1)
+
+        app.player2 = Player(starting2)
+
+        
+        self.players = [app.player1, app.player2]
+        app.players = [app.player1, app.player2]
+
+
     
 
 ###########################################################################################
@@ -389,18 +397,16 @@ def onAppStart(app):
     app.countriesIn = []
     app.neighbors= []
     app.tView=False
-    starting1=set(get_random_half_countries(country_shapes))
-    starting2=set(country_shapes.keys())-starting1
-    player1=Player(starting1,'green')
-    player2=Player(starting2,'blue')
 
-    app.players=[player1,player2]
+    activeGame=Game(app)
+
+    activeGame.start(app)
+
     app.activePlayer=app.players[0]
 
 
 
 def drawCountries(app):
-    circleCenter=[]
     for country_name in list(country_shapes.keys()):
         name_polygons = country_shapes[country_name]
         
@@ -408,7 +414,7 @@ def drawCountries(app):
         for polygon in name_polygons:
             L=[]
             for x, y in polygon:
-                L += [x] + [y]
+                L += (x,y)
 
 
             if app.tView:
@@ -433,22 +439,28 @@ def drawCountries(app):
                 elif country_name_to_code[country_name] in app.neighbors:
                     color='red'
                 else:
-                    color='lightGray'
+                    if country_name in app.player1.owned:
+                        color='lightgreen'
+                    
+                    elif country_name in app.player2.owned:
+                        color='lightblue'
             
             drawPolygon(*L,fill=color, border='Black', borderWidth=1,
                 opacity=100, rotateAngle=0, dashes=False, visible=True)
         
-        x,y=get_center(name_polygons)
-        circleCenter.append((x,y))
+        
     
+    circleCenter=[]
     if not app.tView:
-        for x,y in circleCenter:
-            print(country_name in app.players[0].owned)
-            if country_name in app.players[0].owned:
+        for country_name in list(country_shapes.keys()):
+            name_polygons = country_shapes[country_name]
+            x,y=get_center(name_polygons)
+            circleCenter.append((x,y))
+            if country_name in app.player1.owned:
                 drawCircle(x,y,10,fill="green")
                 drawLabel("1",x,y,size=18,bold=True)
             else:
-                drawCircle(x,y,10,fill="red")
+                drawCircle(x,y,10,fill="aqua")
                 drawLabel("1",x,y,size=18,bold=True)
 
 def onKeyPress(app,key):
