@@ -12,7 +12,7 @@ import json
 import numpy as np
 ###########################################################################################
 # Json File Reading
-with open('.src/geojson-maps.json', 'r') as f:
+with open('./src/geojson-maps.json', 'r') as f:
     json_data = json.load(f)
 
 data = []
@@ -36,7 +36,7 @@ exceptions = ["GRL", "ISL"]
 filtered_df = df[(df["pop_est"] >= 2000000) | (df["adm0_a3"].isin(exceptions))]
 
 # GeoPandas file reading
-geojson_path = '.src/datahub.geojson'
+geojson_path = './src/datahub.geojson'
 world_data = gpd.read_file(geojson_path)
 filtered_world_data = world_data[world_data['ISO_A3'].isin(filtered_df['adm0_a3'])]
 filtered_world_data = pd.merge(
